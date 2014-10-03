@@ -1,11 +1,39 @@
---2014-10-03 13:34:22--  https://gist.githubusercontent.com/eiennohito/10447343/raw/d3553b3683308ed4b3569ebda30d03ce8a800d68/caff
-Resolving gist.githubusercontent.com... 192.30.252.157
-Connecting to gist.githubusercontent.com|192.30.252.157|:443... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: unspecified [text/plain]
-Saving to: 'caff'
+#!/usr/bin/env python
 
-     0K                                                        11.5M=0s
+from optparse import OptionParser
+import re
+from os import execvp
 
-2014-10-03 13:34:23 (11.5 MB/s) - 'caff' saved [1000]
+parser = OptionParser()
 
+parser.add_option('-i', action="store_const", dest='mode', const='i')
+parser.add_option('-m', action="store_const", dest='mode', const='m')
+parser.add_option('-s', action="store_const", dest='mode', const='s')
+parser.add_option('-u', action="store_const", dest='mode', const='u')
+
+parser.set_default('mode', 'd')
+
+(opts, args) = parser.parse_args()
+
+mode = opts.mode
+
+multipliers = {
+  "s": 1,  # seconds
+  "m": 60,  # minutes
+  "h": 60 * 60,  # hours
+  "d": 60 * 60 * 24  # days
+}
+
+total = 0  # 0 seconds by default
+
+for arg in args:
+  for pattern in re.findall(r"(?:(-?\d+(?:\.\d+)?)([smhd])?)", arg):
+    (dur, measure) = pattern
+    total += float(dur) * multipliers[measure]
+
+if (total == 0):
+  print "Specify duration in format 3.1d 1h5m 2s"
+else:
+  print "Not sleeping for %d seconds" % total
+
+  execvp("/usr/bin/caffeinate", ["caffeinate", "-%s" % mode, "-t", str(int(total))])
